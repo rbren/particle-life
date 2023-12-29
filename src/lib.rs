@@ -18,6 +18,7 @@ pub struct Settings {
     num_colors: u8,
     atoms_per_color: u32,
     toroid: bool,
+    rules: Vec<f32>,
 }
 
 #[wasm_bindgen]
@@ -68,11 +69,13 @@ impl Universe {
             let ay = 5 * i + 1;
             let avx = 5 * i + 2;
             let avy = 5 * i + 3;
+            let acol = 5 * i + 4;
             let mut fx = 0.0;
             let mut fy = 0.0;
             for j in 0..self.num_atoms() {
                 let bx = 5 * j + 0;
                 let by = 5 * j + 1;
+                let bcol = 5 * j + 4;
                 let dx = self.atoms[bx] - self.atoms[ax];
                 let dy = self.atoms[by] - self.atoms[ay];
                 //web_sys::console::log_2(&dx.into(), &dy.into());
@@ -80,7 +83,8 @@ impl Universe {
                     continue;
                 }
                 let d = dx * dx + dy * dy;
-                let g = 0.01; // todo: plumb
+                let ruleIdx = self.atoms[acol] as u8 * self.settings.num_colors + self.atoms[bcol] as u8;
+                let g = self.settings.rules[ruleIdx as usize];
                 if d < 800.0  && d > 0.0 {
                     let f = g / d.sqrt();
                     fx += f * dx;

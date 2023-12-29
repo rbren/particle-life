@@ -45,7 +45,7 @@ const settings = {
     wallRepel: 40,
     toroid: true,
     reset: () => {
-        randomAtoms(settings.atoms.count, true)
+        startLife();
     },
     randomRules: () => {
         settings.seed = local_seed   // last used seed is the new starting seed
@@ -117,13 +117,14 @@ const setupGUI = () => {
         .listen().onFinishChange(v => {
             setNumberOfColors();
             startRandom();
+            startLife();
         })
     configFolder.add(settings, 'seed').name('Seed').listen().onFinishChange(v => {
         startRandom();
     })
     configFolder.add(settings, 'fps').name('FPS - (Live)').listen().disable()
     configFolder.add(settings.atoms, 'count', 1, 1000, 1).name('Atoms per-color').listen().onFinishChange(v => {
-        randomAtoms(v, true)
+        startLife();
     })
     configFolder.add(settings, 'time_scale', 0.1, 5, 0.01).name('Time Scale').listen()
     configFolder.add(settings, 'viscosity', 0.1, 2, 0.1).name('Viscosity').listen()
@@ -152,11 +153,11 @@ const setupGUI = () => {
         for (const ruleColor of settings.colors) {
             colorFolder.add(settings.rules[atomColor], ruleColor, -1, 1, 0.001)
                  .name(`<-> <font color=\'${ruleColor}\'>${ruleColor.capitalise()}</font>`)
-                 .listen().onFinishChange(v => { flattenRules() }
+                 .listen().onFinishChange(v => { flattenRules(); startLife(); }
             )
         }
         colorFolder.add(settings.radii, atomColor, 1, maxRadius, 5).name('Radius')
-            .listen().onFinishChange(v => { flattenRules() }
+            .listen().onFinishChange(v => { flattenRules(); startLife(); }
         )
     }
 
@@ -269,16 +270,8 @@ const create = (number, color) => {
     }
 };
 
-function randomAtoms(number_of_atoms_per_color, clear_previous) {
-    atoms = life.createAtoms(null, 1, 2, 3, 4);
-    console.log('create', settings.colors.length, number_of_atoms_per_color, canvas.width, canvas.height);
-    atoms = life.createAtoms(null, settings.colors.length, number_of_atoms_per_color, canvas.width, canvas.height);
-    console.log('created', atoms);
-}
-
 function startRandom() {
     randomRules();
-    randomAtoms(settings.atoms.count, true);
     updateGUIDisplay()
 }
 
@@ -539,12 +532,14 @@ var lastT;
 var univserse;
 window.startLife = function() {
     console.log('start life');
+    if (window.animFrame) cancelAnimationFrame(window.animFrame);
     universe = window.Universe.new({
         width: canvas.width,
         height: canvas.height,
         num_colors: settings.numColors,
         atoms_per_color: settings.atoms.count,
         toroid: settings.toroid,
+        rules: settings.rulesArray,
     });
     lastT = Date.now();
     update();
@@ -592,7 +587,7 @@ function update() {
     // const inRange = (a) => 0 <= a[0] && a[0] < canvas.width && 0 <= a[1] && a[1] < canvas.height
     // console.log('inRange', atoms.filter(inRange).length)
 
-    requestAnimationFrame(update);
+    window.animFrame = requestAnimationFrame(update);
 };
 
 // post-frame stats and updates
