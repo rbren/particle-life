@@ -37,9 +37,11 @@ const runWasmAdd = async () => {
   console.log('instance', wasmModule.instance.exports);
 
   // Call the Add function export from wasm, save the result
-  const addResult = wasmModule.instance.exports.add(24, 24);
-
+  window.life = wasmModule.instance.exports;
+  const addResult = life.add(24, 24);
   console.log('add res', addResult);
+
+  window.startLife();
 };
 runWasmAdd();
 

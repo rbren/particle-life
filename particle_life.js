@@ -6,7 +6,7 @@ const settings = {
     seed: 91651088029,
     fps: 0,
     atoms: {
-        count: 500,  // Per Color
+        count: 100,  // Per Color
         radius: 1,
     },
     drawings: {  // Drawing options can be expensive on performance
@@ -269,11 +269,10 @@ const create = (number, color) => {
 };
 
 function randomAtoms(number_of_atoms_per_color, clear_previous) {
-    if (clear_previous) atoms.length = 0;
-    for (let c = 0; c < settings.colors.length; c++) {
-        create(number_of_atoms_per_color, c)
-    }
-    clusters.length = 0;
+    atoms = life.createAtoms(null, 1, 2, 3, 4);
+    console.log('create', settings.colors.length, number_of_atoms_per_color, canvas.width, canvas.height);
+    atoms = life.createAtoms(null, settings.colors.length, number_of_atoms_per_color, canvas.width, canvas.height);
+    console.log('created', atoms);
 }
 
 function startRandom() {
@@ -562,8 +561,7 @@ setNumberOfColors()
 randomRules()
 
 // Generate Atoms
-const atoms = []
-randomAtoms(settings.atoms.count, true)
+let atoms = []
 
 
 setupClicks()
@@ -572,9 +570,13 @@ setupGUI()
 
 console.log('settings', settings)
 
-// Update Frames
-var lastT = Date.now();
-update();
+var lastT;
+window.startLife = function() {
+    console.log('start life');
+    randomAtoms(settings.atoms.count, true)
+    lastT = Date.now();
+    update();
+}
 
 function update() {
     // Update Canvas Dimensions - if screen size changed
