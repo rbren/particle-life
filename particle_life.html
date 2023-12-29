@@ -78,6 +78,7 @@
             gravity: 0.0,  // pulling downward
             pulseDuration: 10,
             wallRepel: 40,
+            toroid: true,
             reset: () => {
                 randomAtoms(settings.atoms.count, true)
             },
@@ -166,6 +167,7 @@
             configFolder.add(settings, 'pulseDuration', 1, 100, 1).name('Click Pulse Duration').listen()
 
             configFolder.add(settings, 'wallRepel', 0, 100, 1).name('Wall Repel').listen()
+            configFolder.add(settings, 'toroid').name('Toroid').listen()
             configFolder.add(settings, 'explore').name('Random Exploration').listen()
             // Drawings
             const drawingsFolder = settings.gui.addFolder('Drawings')
@@ -282,11 +284,11 @@
 
         // Initiate Random locations for Atoms ( used when atoms created )
         function randomX() {
-            return mulberry32() * (canvas.width - 100) + 50;
+            return mulberry32() * canvas.width;
         };
 
         function randomY() {
-            return mulberry32() * (canvas.height - 100) + 50;
+            return mulberry32() * canvas.height;
         };
 
         /* Create an Atom - Use matrices for x4/5 performance improvement
@@ -493,8 +495,14 @@
                 const r2 = settings.radii2Array[a[4]]
                 for (const b of atoms) {
                     const g = settings.rulesArray[idx + b[4]];
-                    const dx = a[0] - b[0];
-                    const dy = a[1] - b[1];
+                    let dx = a[0] - b[0];
+                    let dy = a[1] - b[1];
+                    if (settings.toroid) {
+                        const altDx = dx > 0 ? dx - canvas.width : dx + canvas.width;
+                        const altDy = dy > 0 ? dy - canvas.height : dy + canvas.height;
+                        if (Math.abs(altDx) < Math.abs(dx)) dx = altDx;
+                        if (Math.abs(altDy) < Math.abs(dy)) dy = altDy;
+                    }
                     if (dx !== 0 || dy !== 0) {
                         const d = dx * dx + dy * dy;
                         if (d < r2) {
@@ -519,7 +527,7 @@
                         fy += F * dy;
                     }
                 }
-                if (settings.wallRepel > 0) {
+                if (!settings.toroid && settings.wallRepel > 0) {
                   const d = settings.wallRepel
                   const strength = 0.1
                   if (a[0] <                d) fx += (d -                a[0]) * strength
@@ -543,20 +551,36 @@
 
                 // When Atoms touch or bypass canvas borders
                 if (a[0] < 0) {
-                    a[0] = -a[0];
-                    a[2] *= -1;
+                    if (settings.toroid) {
+                        a[0] += canvas.width;
+                    } else {
+                        a[0] = -a[0];
+                        a[2] *= -1;
+                    }
                 }
                 if (a[0] >= canvas.width) {
-                    a[0] = 2 * canvas.width - a[0];
-                    a[2] *= -1;
+                    if (settings.toroid) {
+                        a[0] -= canvas.width;
+                    } else {
+                        a[0] = 2 * canvas.width - a[0];
+                        a[2] *= -1;
+                    }
                 }
                 if (a[1] < 0) {
-                    a[1] = -a[1];
-                    a[3] *= -1;
+                    if (settings.toroid) {
+                        a[1] += canvas.height;
+                    } else {
+                        a[1] = -a[1];
+                        a[3] *= -1;
+                    }
                 }
                 if (a[1] >= canvas.height) {
-                    a[1] = 2 * canvas.height - a[1];
-                    a[3] *= -1;
+                    if (settings.toroid) {
+                        a[1] -= canvas.height;
+                    } else {
+                        a[1] = 2 * canvas.height - a[1];
+                        a[3] *= -1;
+                    }
                 }
 
             }
