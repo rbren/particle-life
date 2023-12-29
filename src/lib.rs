@@ -50,12 +50,35 @@ impl Universe {
     pub fn new(settings_js: JsValue) -> Universe {
         let settings: Settings = serde_wasm_bindgen::from_value(settings_js).unwrap();
         let atoms = Vec::with_capacity(settings.num_atoms());
+         web_sys::console::log_1(&settings.toroid.into());
+
         let mut u = Universe {
             settings,
             atoms,
         };
         u.random_atoms();
         u
+    }
+
+    pub fn set_num_colors(&mut self, num_colors: u8) {
+        self.settings.num_colors = num_colors;
+        self.random_atoms();
+    }
+
+    pub fn set_rules(&mut self, rules: Vec<f32>) {
+        self.settings.rules = rules;
+    }
+
+    pub fn set_viscosity(&mut self, viscosity: f32) {
+        self.settings.viscosity = viscosity;
+    }
+
+    pub fn set_wall_repel(&mut self, wall_repel: u32) {
+        self.settings.wall_repel = wall_repel;
+    }
+
+    pub fn set_toroid(&mut self, toroid: bool) {
+        self.settings.toroid = toroid;
     }
 
     pub fn random_atoms(&mut self) {
@@ -107,8 +130,16 @@ impl Universe {
                 let bx = 5 * j + 0;
                 let by = 5 * j + 1;
                 let bcol = 5 * j + 4;
-                let dx = self.atoms[ax] - self.atoms[bx];
-                let dy = self.atoms[ay] - self.atoms[by];
+                let mut dx = self.atoms[ax] - self.atoms[bx];
+                let mut dy = self.atoms[ay] - self.atoms[by];
+                if self.settings.toroid {
+                    let w = self.settings.width as f32;
+                    let h = self.settings.height as f32;
+                    let alt_dx = if dx > 0.0 { dx - w } else { dx + w };
+                    let alt_dy = if dy > 0.0 { dy - h } else { dy + h };
+                    if alt_dx.abs() < dx.abs() { dx = alt_dx; }
+                    if alt_dy.abs() < dy.abs() { dy = alt_dy; }
+                }
                 if dx == 0.0 && dy == 0.0 {
                     continue;
                 }
@@ -122,6 +153,7 @@ impl Universe {
                 }
             }
             if !self.settings.toroid && self.settings.wall_repel > 0 {
+                web_sys::console::log_1(&"wall repel".into());
                 let d = self.settings.wall_repel as f32;
                 let w = self.settings.width as f32;
                 let h = self.settings.height as f32;
@@ -151,8 +183,17 @@ impl Universe {
             self.atoms[x] += self.atoms[vx];
             self.atoms[y] += self.atoms[vy];
             if self.settings.toroid {
-                self.atoms[x] = (self.atoms[x] + self.settings.width as f32) % self.settings.width as f32;
-                self.atoms[y] = (self.atoms[y] + self.settings.height as f32) % self.settings.height as f32;
+                web_sys::console::log_1(&"wrap".into());
+                if self.atoms[x] < 0.0 {
+                    self.atoms[x] += self.settings.width as f32;
+                } else if self.atoms[x] > self.settings.width as f32 {
+                    self.atoms[x] -= self.settings.width as f32;
+                }
+                if self.atoms[y] < 0.0 {
+                    self.atoms[y] += self.settings.height as f32;
+                } else if self.atoms[y] > self.settings.height as f32 {
+                    self.atoms[y] -= self.settings.height as f32;
+                }
             } else {
                 self.atoms[x] = self.atoms[x].max(0.0).min(self.settings.width as f32);
                 self.atoms[y] = self.atoms[y].max(0.0).min(self.settings.height as f32);
