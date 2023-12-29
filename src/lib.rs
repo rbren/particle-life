@@ -24,6 +24,10 @@ impl Universe {
         self.height
     }
 
+    pub fn num_atoms(&self) -> usize {
+        self.atoms.len()
+    }
+
     pub fn atoms(&self) -> *const f32 {
         self.atoms[0].as_ptr()
     }
@@ -38,7 +42,10 @@ impl Universe {
 
         for i in 0..colors {
             for _j in 0..atoms_per_color {
-                atoms.push(vec![0.0, 0.0, 0.0, 0.0, 0.0]);
+                atoms.push(vec![
+                   js_sys::Math::random() as f32 * width as f32,
+                   js_sys::Math::random() as f32 * height as f32,
+                   0.0, 0.0, i as f32]);
             }
         }
 

@@ -1,3 +1,4 @@
+const FIELDS_PER_ATOM = 5;
 const maxRadius = 200;
 const maxClusters = 20;
 const minClusterSize = 50;
@@ -380,42 +381,6 @@ function finalizeClusters(accums) {
     // radius of the cluster, we should probably split it in two
     // along the main axis!
 }
-function trackClusters() {
-    addNewClusters(maxClusters);
-    let accums = [];
-    for (const c of clusters) accums.push([0, 0., 0., 0., 0]);
-    const maxKMeanPasses = 10;
-    for (let pass = maxKMeanPasses; pass >= 0; --pass) {
-        for (let a of accums) a = [0, 0., 0., 0., 0];
-        for (const c of atoms) {
-            const [best, best_d2] = findNearestCluster(c[0], c[1]);
-            if (best >= 0 && best_d2 < maxRadius * maxRadius) {
-                accums[best][0] += 1;
-                accums[best][1] += c[0];
-                accums[best][2] += c[1];
-                accums[best][3] += best_d2;
-                accums[best][4] += c[4];
-            }
-        }
-        const max_d = moveClusters(accums);
-        if (max_d < 1.) break;
-    }
-    finalizeClusters(accums);
-}
-function drawClusters() {
-    let i = 0;
-    while (i < clusters.length) {
-        let c = clusters[i];
-        if (c[2] > 0.) {
-            drawCircle(c[0], c[1], c[3], c[2], false);
-            ++i;
-        } else {
-            // remove cluster by swapping with last
-            const last = clusters.pop();
-            if (i < clusters.length) clusters[i] = last;
-        }
-    }
-}
 
 // Canvas Dimensions
 updateCanvasDimensions()
@@ -579,6 +544,26 @@ window.startLife = function() {
     update();
 }
 
+function getX(index) {
+    return atoms[index * FIELDS_PER_ATOM];
+}
+
+function getY(index) {
+    return atoms[index * FIELDS_PER_ATOM + 1];
+}
+
+function getVx(index) {
+    return atoms[index * FIELDS_PER_ATOM + 2];
+}
+
+function getVy(index) {
+    return atoms[index * FIELDS_PER_ATOM + 3];
+}
+
+function getColor(index) {
+    return Math.round(atoms[index * FIELDS_PER_ATOM + 4]);
+}
+
 function update() {
     // Update Canvas Dimensions - if screen size changed
     updateCanvasDimensions()
@@ -588,21 +573,13 @@ function update() {
     // Appy Rules
     universe.tick();
     // Draw Atoms
-    console.log('ticked');
+    const numAtoms = universe.num_atoms();
     const atomsPtr = universe.atoms();
-    const atoms = new Uint8Array(memory.buffer, atomsPtr, universe.width() * universe.height() * 5);
-    console.log('atoms', atoms);
+    atoms = new Float32Array(memory.buffer, atomsPtr, numAtoms * FIELDS_PER_ATOM);
+    console.log('got atoms', atoms.length);
 
-    for (const a of atoms) {
-        if (settings.drawings.circle) {
-            drawCircle(a[0], a[1], settings.colors[a[4]], settings.atoms.radius);
-        } else {
-            drawSquare(a[0], a[1], settings.colors[a[4]], settings.atoms.radius);
-        }
-    }
-    if (settings.drawings.clusters) {
-        trackClusters();
-        drawClusters();
+    for (let i = 0; i < numAtoms; i++) {
+        drawCircle(getX(i), getY(i), settings.colors[getColor(i)], settings.atoms.radius);
     }
 
     updateParams();
