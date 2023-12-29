@@ -12,10 +12,6 @@ pub struct Universe {
 
 #[wasm_bindgen]
 impl Universe {
-    fn get_index(&self, row: u32, column: u32) -> usize {
-        (row * self.width + column) as usize
-    }
-
     pub fn width(&self) -> u32 {
         self.width
     }
@@ -32,9 +28,7 @@ impl Universe {
         self.atoms.as_ptr()
     }
 
-    pub fn new() -> Universe {
-        let width = 64;
-        let height = 64;
+    pub fn new(width: u32, height: u32) -> Universe {
         let atoms_per_color = 100;
         let colors = 4;
         let num_atoms = colors as usize * atoms_per_color as usize;
@@ -46,8 +40,8 @@ impl Universe {
                 let rand_y: f32 = (js_sys::Math::random() * height as f64) as f32;
                 atoms.push(rand_x);
                 atoms.push(rand_y);
-                atoms.push(0.1);
-                atoms.push(0.2);
+                atoms.push(0.0);
+                atoms.push(0.0);
                 atoms.push(i as f32);
             }
         }
