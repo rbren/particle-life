@@ -1,4 +1,5 @@
 const FIELDS_PER_ATOM = 5;
+const MS_PER_FRAME = 50;
 const maxRadius = 200;
 const maxClusters = 20;
 const minClusterSize = 50;
@@ -190,13 +191,11 @@ function randomSetup() {
     window.location.hash = "#" + settings.seed;
     document.title = "Life #" + settings.seed;
     local_seed = settings.seed;
-    console.log('rand setup');
     settings.numColors = Math.floor(mulberry32() * 6 + 2); // 2 to 7
     totalAtoms = Math.floor(mulberry32() * 2500 + 500); // 500 to 3000
     settings.atoms.count = Math.floor(totalAtoms / settings.numColors);
     settings.viscosity = mulberry32() * 1.9 + 0.1; // 0.1 to 2
     settings.wallRepel = Math.floor(mulberry32() * 100); // 0 to 100
-    console.log('numColors', settings.numColors);
     setNumberOfColors()
     randomRules();
 }
@@ -529,6 +528,7 @@ setupGUI()
 console.log('settings', settings)
 
 var lastT;
+var lastMsDuration;
 var univserse;
 window.startLife = function() {
     console.log('start life');
@@ -543,6 +543,7 @@ window.startLife = function() {
         wall_repel: settings.wallRepel,
     });
     lastT = Date.now();
+    lastMsDuration = 0;
     update();
 }
 
@@ -567,6 +568,7 @@ function getColor(index) {
 }
 
 function update() {
+    const updateStart = Date.now();
     // Update Canvas Dimensions - if screen size changed
     updateCanvasDimensions()
     // Background color
@@ -587,8 +589,11 @@ function update() {
 
     // const inRange = (a) => 0 <= a[0] && a[0] < canvas.width && 0 <= a[1] && a[1] < canvas.height
     // console.log('inRange', atoms.filter(inRange).length)
-
-    window.animFrame = requestAnimationFrame(update);
+    const updateEnd = Date.now();
+    const timeLeft = MS_PER_FRAME - (updateEnd - updateStart);
+    setTimeout(() => {
+        window.animFrame = requestAnimationFrame(update);
+    }, Math.max(0, timeLeft));
 };
 
 // post-frame stats and updates
@@ -596,9 +601,12 @@ function updateParams() {
     // record FPS
     var curT = Date.now();
     if (curT > lastT) {
-        const new_fps = 1000. / (curT - lastT);
-        settings.fps = Math.round(settings.fps * 0.8 + new_fps * 0.2)
+        lastMsDuration = curT - lastT;
+        const new_fps = 1000. / lastMsDuration;
+        settings.fps = settings.fps * 0.8 + new_fps * 0.2;
         lastT = curT;
+    } else {
+        console.log("time went backwards!");
     }
 
     // adapt time_scale based on activity
