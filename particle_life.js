@@ -43,7 +43,7 @@ const settings = {
     gravity: 0.0,  // pulling downward
     pulseDuration: 10,
     wallRepel: 40,
-    toroid: true,
+    toroid: false,
     reset: () => {
         startLife();
     },
@@ -540,6 +540,7 @@ window.startLife = function() {
         atoms_per_color: settings.atoms.count,
         toroid: settings.toroid,
         rules: settings.rulesArray,
+        wall_repel: settings.wallRepel,
     });
     lastT = Date.now();
     update();

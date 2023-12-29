@@ -18,6 +18,7 @@ pub struct Settings {
     num_colors: u8,
     atoms_per_color: u32,
     toroid: bool,
+    wall_repel: u32,
     rules: Vec<f32>,
 }
 
@@ -91,12 +92,30 @@ impl Universe {
                     continue;
                 }
                 let d = dx * dx + dy * dy;
-                let ruleIdx = self.atoms[acol] as u8 * self.settings.num_colors + self.atoms[bcol] as u8;
-                let g = self.settings.rules[ruleIdx as usize];
+                let rule_idx = self.atoms[acol] as u8 * self.settings.num_colors + self.atoms[bcol] as u8;
+                let g = self.settings.rules[rule_idx as usize];
                 if d < 800.0  && d > 0.0 {
                     let f = g / d.sqrt();
                     fx += f * dx;
                     fy += f * dy;
+                }
+            }
+            if !self.settings.toroid && self.settings.wall_repel > 0 {
+                let d = self.settings.wall_repel as f32;
+                let w = self.settings.width as f32;
+                let h = self.settings.height as f32;
+                let strength = 0.1;
+                if self.atoms[ax] < d {
+                    fx += (d - self.atoms[ax]) * strength
+                }
+                if self.atoms[ax] > w - d {
+                    fx += (w - d - self.atoms[ax]) * strength
+                }
+                if self.atoms[ay] < d {
+                    fy += (d - self.atoms[ay]) * strength
+                }
+                if self.atoms[ay] > h - d {
+                    fy += (h - d - self.atoms[ay]) * strength
                 }
             }
             self.atoms[avx] += fx;
