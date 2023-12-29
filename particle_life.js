@@ -467,17 +467,15 @@ const applyRules = () => {
                 if (Math.abs(altDx) < Math.abs(dx)) dx = altDx;
                 if (Math.abs(altDy) < Math.abs(dy)) dy = altDy;
             }
-            if (dx !== 0 || dy !== 0) {
-                const d = dx * dx + dy * dy;
-                if (d < r2) {
-                    const F = g / Math.sqrt(d);
-                    fx += F * dx;
-                    fy += F * dy;
+            const d = Math.max(.1, dx * dx + dy * dy);
+            if (d < r2) {
+                const F = g / Math.sqrt(d);
+                fx += F * dx;
+                fy += F * dy;
 
-                    // Draw lines between atoms that are effecting each other.
-                    if (settings.drawings.lines) {
-                        drawLineBetweenAtoms(a[0], a[1], b[0], b[1], settings.colors[b[4]]);
-                    }
+                // Draw lines between atoms that are effecting each other.
+                if (settings.drawings.lines) {
+                    drawLineBetweenAtoms(a[0], a[1], b[0], b[1], settings.colors[b[4]]);
                 }
             }
         }
