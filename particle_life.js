@@ -544,6 +544,7 @@ window.startLife = function() {
         height: canvas.height,
         num_colors: settings.numColors,
         atoms_per_color: settings.atoms.count,
+        toroid: settings.toroid,
     });
     lastT = Date.now();
     update();

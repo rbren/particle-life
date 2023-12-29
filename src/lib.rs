@@ -17,6 +17,7 @@ pub struct Settings {
     width: u32,
     num_colors: u8,
     atoms_per_color: u32,
+    toroid: bool,
 }
 
 #[wasm_bindgen]
@@ -79,8 +80,8 @@ impl Universe {
                     continue;
                 }
                 let d = dx * dx + dy * dy;
-                let g = 0.1; // todo: plumb
-                if d < 80.0  && d > 0.0 {
+                let g = 0.01; // todo: plumb
+                if d < 800.0  && d > 0.0 {
                     let f = g / d.sqrt();
                     fx += f * dx;
                     fy += f * dy;
@@ -96,6 +97,13 @@ impl Universe {
             let vy = 5 * i + 3;
             self.atoms[x] += self.atoms[vx];
             self.atoms[y] += self.atoms[vy];
+            if self.settings.toroid {
+                self.atoms[x] = (self.atoms[x] + self.settings.width as f32) % self.settings.width as f32;
+                self.atoms[y] = (self.atoms[y] + self.settings.height as f32) % self.settings.height as f32;
+            } else {
+                self.atoms[x] = self.atoms[x].max(0.0).min(self.settings.width as f32);
+                self.atoms[y] = self.atoms[y].max(0.0).min(self.settings.height as f32);
+            }
         }
     }
 }
