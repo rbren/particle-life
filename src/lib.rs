@@ -21,6 +21,7 @@ pub struct Settings {
     wall_repel: u32,
     viscosity: f32,
     rules: Vec<f32>,
+    time_scale: f32,
 }
 
 impl Settings {
@@ -79,6 +80,10 @@ impl Universe {
 
     pub fn set_toroid(&mut self, toroid: bool) {
         self.settings.toroid = toroid;
+    }
+
+    pub fn set_time_scale(&mut self, time_scale: f32) {
+        self.settings.time_scale = time_scale;
     }
 
     pub fn random_atoms(&mut self) {
@@ -153,7 +158,6 @@ impl Universe {
                 }
             }
             if !self.settings.toroid && self.settings.wall_repel > 0 {
-                web_sys::console::log_1(&"wall repel".into());
                 let d = self.settings.wall_repel as f32;
                 let w = self.settings.width as f32;
                 let h = self.settings.height as f32;
@@ -172,8 +176,8 @@ impl Universe {
                 }
             }
             let vmix = 1.0 - self.settings.viscosity;
-            self.atoms[avx] = self.atoms[avx] * vmix + fx;
-            self.atoms[avy] = self.atoms[avy] * vmix + fy;
+            self.atoms[avx] = self.atoms[avx] * vmix + fx * self.settings.time_scale;
+            self.atoms[avy] = self.atoms[avy] * vmix + fy * self.settings.time_scale;
         }
         for i in 0..self.num_atoms() {
             let x = 5 * i + 0;

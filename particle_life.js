@@ -1,5 +1,5 @@
 const FIELDS_PER_ATOM = 5;
-const MS_PER_FRAME = 15;
+const MS_PER_FRAME = 1;
 const maxRadius = 200;
 const maxClusters = 20;
 const minClusterSize = 50;
@@ -39,12 +39,12 @@ const settings = {
     radii: {},
     radii2Array: [],
     colors: [],
-    time_scale: 1.0,
+    timeScale: 1.0,
     viscosity: 0.7,  // speed-dampening (can be >1 !)
     gravity: 0.0,  // pulling downward
     pulseDuration: 10,
     wallRepel: 40,
-    toroid: true,
+    toroid: false,
     reset: () => {
         startLife();
     },
@@ -131,7 +131,10 @@ const setupGUI = () => {
         .listen().onFinishChange(v => {
             startLife();
         });
-    configFolder.add(settings, 'time_scale', 0.1, 5, 0.01).name('Time Scale').listen()
+    configFolder.add(settings, 'timeScale', 0.1, 5, 0.01).name('Time Scale')
+        .listen().onFinishChange(t => {
+            universe.set_time_scale(t);
+        });
     configFolder.add(settings, 'viscosity', 0.1, 2, 0.1).name('Viscosity')
         .listen().onFinishChange(v => {
             universe.set_viscosity(v);
@@ -458,7 +461,7 @@ const applyRules = () => {
             const dy = a[1] - pulse_y;
             const d = dx * dx + dy * dy;
             if (d > 0) {
-                const F = 100. * pulse / (d * settings.time_scale);
+                const F = 100. * pulse / (d * settings.timeScale);
                 fx += F * dx;
                 fy += F * dy;
             }
@@ -473,10 +476,10 @@ const applyRules = () => {
         }
         fy += settings.gravity;
         const vmix = (1. - settings.viscosity);
-        a[2] = a[2] * vmix + fx * settings.time_scale;
-        a[3] = a[3] * vmix + fy * settings.time_scale;
+        a[2] = a[2] * vmix + fx * settings.timeScale;
+        a[3] = a[3] * vmix + fy * settings.timeScale;
         // record typical activity, so that we can scale the
-        // time_scale later accordingly
+        // timeScale later accordingly
         total_v += Math.abs(a[2]);
         total_v += Math.abs(a[3]);
     }
@@ -552,6 +555,7 @@ window.startLife = function() {
         rules: settings.rulesArray,
         wall_repel: settings.wallRepel,
         viscosity: settings.viscosity,
+        time_scale: settings.timeScale,
     });
     lastT = Date.now();
     lastMsDuration = 0;
@@ -619,11 +623,6 @@ function updateParams() {
     } else {
         console.log("time went backwards!");
     }
-
-    // adapt time_scale based on activity
-    if (total_v > 30. && settings.time_scale > 5.) settings.time_scale /= 1.1;
-    if (settings.time_scale < 0.9) settings.time_scale *= 1.01;
-    if (settings.time_scale > 1.1) settings.time_scale /= 1.01;
 
     if (pulse != 0) pulse -= (pulse > 0) ? 1 : -1;
     if (settings.explore) exploreParameters();
