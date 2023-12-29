@@ -1,5 +1,5 @@
 const FIELDS_PER_ATOM = 5;
-const MS_PER_FRAME = 15;
+const MS_PER_FRAME = 10;
 const maxRadius = 200;
 const maxClusters = 20;
 const minClusterSize = 50;
@@ -44,18 +44,19 @@ const settings = {
     gravity: 0.0,  // pulling downward
     pulseDuration: 10,
     wallRepel: 40,
-    toroid: false,
+    toroid: true,
     reset: () => {
         startLife();
     },
     randomRules: () => {
         settings.seed = local_seed   // last used seed is the new starting seed
-        startRandom()
+        randomizeRules();
+        universe.set_rules(settings.rulesArray);
     },
     randomSetup: () => {
         settings.seed = local_seed   // last used seed is the new starting seed
-        randomSetup();
-        startRandom();
+        randomizeSetup();
+        startLife();
     },
     symmetricRules: false,
     gui: null,
@@ -117,24 +118,37 @@ const setupGUI = () => {
     configFolder.add(settings, 'numColors', 1, 7, 1).name('Number of Colors')
         .listen().onFinishChange(v => {
             setNumberOfColors();
-            startRandom();
+            randomizeRules();
             startLife();
-        })
-    configFolder.add(settings, 'seed').name('Seed').listen().onFinishChange(v => {
-        startRandom();
-    })
+        });
+    configFolder.add(settings, 'seed').name('Seed')
+        .listen().onFinishChange(v => {
+            randomizeRules();
+            startLife();
+        });
     configFolder.add(settings, 'fps').name('FPS - (Live)').listen().disable()
-    configFolder.add(settings.atoms, 'count', 1, 1000, 1).name('Atoms per-color').listen().onFinishChange(v => {
-        startLife();
-    })
+    configFolder.add(settings.atoms, 'count', 1, 1000, 1).name('Atoms per-color')
+        .listen().onFinishChange(v => {
+            startLife();
+        });
     configFolder.add(settings, 'time_scale', 0.1, 5, 0.01).name('Time Scale').listen()
-    configFolder.add(settings, 'viscosity', 0.1, 2, 0.1).name('Viscosity').listen()
+    configFolder.add(settings, 'viscosity', 0.1, 2, 0.1).name('Viscosity')
+        .listen().onFinishChange(v => {
+            universe.set_viscosity(v);
+        });
 
     configFolder.add(settings, 'gravity', 0., 1., 0.05).name('Gravity').listen()
     configFolder.add(settings, 'pulseDuration', 1, 100, 1).name('Click Pulse Duration').listen()
 
     configFolder.add(settings, 'wallRepel', 0, 100, 1).name('Wall Repel').listen()
-    configFolder.add(settings, 'toroid').name('Toroid').listen()
+        .listen().onFinishChange(v => {
+            universe.set_wall_repel(v);
+        });
+
+    configFolder.add(settings, 'toroid').name('Toroid').listen().onFinishChange(v => {
+        universe.set_toroid(v);
+    });
+
     configFolder.add(settings, 'explore').name('Random Exploration').listen()
     // Drawings
     const drawingsFolder = settings.gui.addFolder('Drawings')
@@ -186,7 +200,7 @@ function loadSeedFromUrl() {
     }
 }
 
-function randomSetup() {
+function randomizeSetup() {
     if (!isFinite(settings.seed)) settings.seed = 0xcafecafe;
     window.location.hash = "#" + settings.seed;
     document.title = "Life #" + settings.seed;
@@ -197,10 +211,10 @@ function randomSetup() {
     settings.viscosity = mulberry32() * 1.9 + 0.1; // 0.1 to 2
     settings.wallRepel = Math.floor(mulberry32() * 100); // 0 to 100
     setNumberOfColors()
-    randomRules();
+    randomizeRules();
 }
 
-function randomRules() {
+function randomizeRules() {
     if (!isFinite(settings.seed)) settings.seed = 0xcafecafe;
     window.location.hash = "#" + settings.seed;
     document.title = "Life #" + settings.seed;
@@ -268,11 +282,6 @@ const create = (number, color) => {
         atoms.push([randomX(), randomY(), 0, 0, color])
     }
 };
-
-function startRandom() {
-    randomRules();
-    updateGUIDisplay()
-}
 
 function setNumberOfColors() {
     settings.colors = [];
@@ -513,9 +522,8 @@ const applyRules = () => {
 };
 
 
-// Generate Rules
-setNumberOfColors()
-randomRules()
+setNumberOfColors();
+randomizeRules();
 
 // Generate Atoms
 let atoms = []
