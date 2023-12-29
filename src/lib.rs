@@ -119,6 +119,24 @@ impl Universe {
         self.atoms.push(1.0);
     }
 
+    fn get_distance(&self, a: usize, b: usize) -> (f32, f32) {
+        let ax = 5 * a + 0;
+        let ay = 5 * a + 1;
+        let bx = 5 * b + 0;
+        let by = 5 * b + 1;
+        let mut dx = self.atoms[ax] - self.atoms[bx];
+        let mut dy = self.atoms[ay] - self.atoms[by];
+        if self.settings.toroid {
+            let w = self.settings.width as f32;
+            let h = self.settings.height as f32;
+            let alt_dx = if dx > 0.0 { dx - w } else { dx + w };
+            let alt_dy = if dy > 0.0 { dy - h } else { dy + h };
+            if alt_dx.abs() < dx.abs() { dx = alt_dx; }
+            if alt_dy.abs() < dy.abs() { dy = alt_dy; }
+        }
+        return (dx, dy);
+    }
+
     pub fn tick(&mut self) {
         for i in 0..self.num_atoms() {
             let ax = 5 * i + 0;
@@ -128,35 +146,30 @@ impl Universe {
             let acol = 5 * i + 4;
             let mut fx = 0.0;
             let mut fy = 0.0;
+            let r = 80.0;
+            let r2 = r * r;
             for j in 0..self.num_atoms() {
                 if i == j {
                     continue;
                 }
-                let bx = 5 * j + 0;
-                let by = 5 * j + 1;
                 let bcol = 5 * j + 4;
-                let mut dx = self.atoms[ax] - self.atoms[bx];
-                let mut dy = self.atoms[ay] - self.atoms[by];
-                if self.settings.toroid {
-                    let w = self.settings.width as f32;
-                    let h = self.settings.height as f32;
-                    let alt_dx = if dx > 0.0 { dx - w } else { dx + w };
-                    let alt_dy = if dy > 0.0 { dy - h } else { dy + h };
-                    if alt_dx.abs() < dx.abs() { dx = alt_dx; }
-                    if alt_dy.abs() < dy.abs() { dy = alt_dy; }
-                }
+                let (dx, dy) = self.get_distance(i, j);
                 if dx == 0.0 && dy == 0.0 {
+                    continue;
+                }
+                if dx > r || dx < -r || dy > r || dy < -r {
                     continue;
                 }
                 let d = dx * dx + dy * dy;
                 let rule_idx = self.atoms[acol] as u8 * self.settings.num_colors + self.atoms[bcol] as u8;
                 let g = self.settings.rules[rule_idx as usize];
-                if d < 80.0 * 80.0  && d > 0.0 {
+                if d < r2 && d > 0.0 {
                     let f = g / d.sqrt();
                     fx += f * dx;
                     fy += f * dy;
                 }
             }
+
             if !self.settings.toroid && self.settings.wall_repel > 0 {
                 let d = self.settings.wall_repel as f32;
                 let w = self.settings.width as f32;
@@ -175,6 +188,7 @@ impl Universe {
                     fy += (h - d - self.atoms[ay]) * strength
                 }
             }
+
             let vmix = 1.0 - self.settings.viscosity;
             self.atoms[avx] = self.atoms[avx] * vmix + fx * self.settings.time_scale;
             self.atoms[avy] = self.atoms[avy] * vmix + fy * self.settings.time_scale;
