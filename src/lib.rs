@@ -21,6 +21,12 @@ pub struct Settings {
     rules: Vec<f32>,
 }
 
+impl Settings {
+    pub fn num_atoms(&self) -> usize {
+        self.num_colors as usize * self.atoms_per_color as usize
+    }
+}
+
 #[wasm_bindgen]
 impl Universe {
     pub fn width(&self) -> u32 {
@@ -32,7 +38,7 @@ impl Universe {
     }
 
     pub fn num_atoms(&self) -> usize {
-        self.atoms.len() / 5 as usize
+        self.settings.num_atoms()
     }
 
     pub fn atoms(&self) -> *const f32 {
@@ -41,25 +47,27 @@ impl Universe {
 
     pub fn new(settings_js: JsValue) -> Universe {
         let settings: Settings = serde_wasm_bindgen::from_value(settings_js).unwrap();
-        let num_atoms = settings.num_colors as usize * settings.atoms_per_color as usize;
-        let mut atoms: Vec<f32> = Vec::with_capacity(num_atoms);
-
-        for i in 0..settings.num_colors {
-            for _j in 0..settings.atoms_per_color {
-                let rand_x: f32 = (js_sys::Math::random() * settings.width as f64) as f32;
-                let rand_y: f32 = (js_sys::Math::random() * settings.height as f64) as f32;
-                atoms.push(rand_x);
-                atoms.push(rand_y);
-                atoms.push(0.0);
-                atoms.push(0.0);
-                atoms.push(i as f32);
-            }
-        }
-
-
-        Universe {
-            atoms,
+        let atoms = Vec::with_capacity(settings.num_atoms());
+        let mut u = Universe {
             settings,
+            atoms,
+        };
+        u.random_atoms();
+        u
+    }
+
+    pub fn random_atoms(&mut self) {
+        self.atoms = Vec::with_capacity(self.num_atoms());
+        for i in 0..self.settings.num_colors {
+            for _j in 0..self.settings.atoms_per_color {
+                let rand_x: f32 = (js_sys::Math::random() * self.settings.width as f64) as f32;
+                let rand_y: f32 = (js_sys::Math::random() * self.settings.height as f64) as f32;
+                self.atoms.push(rand_x);
+                self.atoms.push(rand_y);
+                self.atoms.push(0.0);
+                self.atoms.push(0.0);
+                self.atoms.push(i as f32);
+            }
         }
     }
 
