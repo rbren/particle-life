@@ -448,6 +448,18 @@ function exploreParameters() {
 
 var total_v; // global velocity as a estimate of on-screen activity
 
+const getDistance = (a, b) => {
+    let dx = a[0] - b[0];
+    let dy = a[1] - b[1];
+    if (settings.toroid) {
+        const altDx = dx > 0 ? dx - canvas.width : dx + canvas.width;
+        const altDy = dy > 0 ? dy - canvas.height : dy + canvas.height;
+        if (Math.abs(altDx) < Math.abs(dx)) dx = altDx;
+        if (Math.abs(altDy) < Math.abs(dy)) dy = altDy;
+    }
+    return [dx, dy];
+}
+
 // Apply Rules ( How atoms interact with each other )
 const applyRules = () => {
     total_v = 0.;
@@ -458,16 +470,11 @@ const applyRules = () => {
         const idx = a[4] * settings.numColors;
         const r2 = settings.radii2Array[a[4]]
         for (const b of atoms) {
+            if (a === b) continue
             const g = settings.rulesArray[idx + b[4]];
-            let dx = a[0] - b[0];
-            let dy = a[1] - b[1];
-            if (settings.toroid) {
-                const altDx = dx > 0 ? dx - canvas.width : dx + canvas.width;
-                const altDy = dy > 0 ? dy - canvas.height : dy + canvas.height;
-                if (Math.abs(altDx) < Math.abs(dx)) dx = altDx;
-                if (Math.abs(altDy) < Math.abs(dy)) dy = altDy;
-            }
-            const d = Math.max(.1, dx * dx + dy * dy);
+            const [dx, dy] = getDistance(a, b);
+            if (dx == 0 && dy == 0) continue;
+            const d = dx * dx + dy * dy
             if (d < r2) {
                 const F = g / Math.sqrt(d);
                 fx += F * dx;
