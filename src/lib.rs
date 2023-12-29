@@ -19,6 +19,7 @@ pub struct Settings {
     atoms_per_color: u32,
     toroid: bool,
     wall_repel: u32,
+    viscosity: f32,
     rules: Vec<f32>,
 }
 
@@ -106,8 +107,8 @@ impl Universe {
                 let bx = 5 * j + 0;
                 let by = 5 * j + 1;
                 let bcol = 5 * j + 4;
-                let dx = self.atoms[bx] - self.atoms[ax];
-                let dy = self.atoms[by] - self.atoms[ay];
+                let dx = self.atoms[ax] - self.atoms[bx];
+                let dy = self.atoms[ay] - self.atoms[by];
                 if dx == 0.0 && dy == 0.0 {
                     continue;
                 }
@@ -138,8 +139,9 @@ impl Universe {
                     fy += (h - d - self.atoms[ay]) * strength
                 }
             }
-            self.atoms[avx] += fx;
-            self.atoms[avy] += fy;
+            let vmix = 1.0 - self.settings.viscosity;
+            self.atoms[avx] = self.atoms[avx] * vmix + fx;
+            self.atoms[avy] = self.atoms[avy] * vmix + fy;
         }
         for i in 0..self.num_atoms() {
             let x = 5 * i + 0;
