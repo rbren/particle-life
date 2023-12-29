@@ -571,9 +571,10 @@ setupGUI()
 console.log('settings', settings)
 
 var lastT;
+var univserse;
 window.startLife = function() {
     console.log('start life');
-    randomAtoms(settings.atoms.count, true)
+    universe = window.Universe.new();
     lastT = Date.now();
     update();
 }
@@ -585,8 +586,13 @@ function update() {
     m.fillStyle = settings.drawings.background_color;
     m.fillRect(0, 0, canvas.width, canvas.height);
     // Appy Rules
-    applyRules();
+    universe.tick();
     // Draw Atoms
+    console.log('ticked');
+    const atomsPtr = universe.atoms();
+    const atoms = new Uint8Array(memory.buffer, atomsPtr, universe.width() * universe.height() * 5);
+    console.log('atoms', atoms);
+
     for (const a of atoms) {
         if (settings.drawings.circle) {
             drawCircle(a[0], a[1], settings.colors[a[4]], settings.atoms.radius);
