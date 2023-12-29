@@ -72,6 +72,24 @@ impl Universe {
         }
     }
 
+    pub fn debug_atoms(&mut self) {
+        self.settings.num_colors = 2;
+        self.settings.atoms_per_color = 1;
+        self.atoms = Vec::with_capacity(10);
+
+        self.atoms.push(100.0);
+        self.atoms.push(100.0);
+        self.atoms.push(0.0);
+        self.atoms.push(0.0);
+        self.atoms.push(0.0);
+
+        self.atoms.push(100.0);
+        self.atoms.push(150.0);
+        self.atoms.push(0.0);
+        self.atoms.push(0.0);
+        self.atoms.push(1.0);
+    }
+
     pub fn tick(&mut self) {
         for i in 0..self.num_atoms() {
             let ax = 5 * i + 0;
@@ -82,19 +100,21 @@ impl Universe {
             let mut fx = 0.0;
             let mut fy = 0.0;
             for j in 0..self.num_atoms() {
+                if i == j {
+                    continue;
+                }
                 let bx = 5 * j + 0;
                 let by = 5 * j + 1;
                 let bcol = 5 * j + 4;
                 let dx = self.atoms[bx] - self.atoms[ax];
                 let dy = self.atoms[by] - self.atoms[ay];
-                //web_sys::console::log_2(&dx.into(), &dy.into());
                 if dx == 0.0 && dy == 0.0 {
                     continue;
                 }
                 let d = dx * dx + dy * dy;
                 let rule_idx = self.atoms[acol] as u8 * self.settings.num_colors + self.atoms[bcol] as u8;
                 let g = self.settings.rules[rule_idx as usize];
-                if d < 800.0  && d > 0.0 {
+                if d < 80.0 * 80.0  && d > 0.0 {
                     let f = g / d.sqrt();
                     fx += f * dx;
                     fy += f * dy;
