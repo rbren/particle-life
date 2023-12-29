@@ -1,5 +1,5 @@
 const FIELDS_PER_ATOM = 5;
-const MS_PER_FRAME = 10;
+const MS_PER_FRAME = 15;
 const maxRadius = 200;
 const maxClusters = 20;
 const minClusterSize = 50;
@@ -32,7 +32,7 @@ const settings = {
             mediaRecorder.state == 'recording' ? mediaRecorder.stop() : mediaRecorder.start();
         },
     },
-    explore: false,
+    explore: 0,
     explorePeriod: 100,
     rules: {},
     rulesArray: [],
@@ -149,7 +149,7 @@ const setupGUI = () => {
         universe.set_toroid(v);
     });
 
-    configFolder.add(settings, 'explore').name('Random Exploration').listen()
+    configFolder.add(settings, 'explore', 0, 60, 1).name('Explore (s)').listen()
     // Drawings
     const drawingsFolder = settings.gui.addFolder('Drawings')
     drawingsFolder.add(settings.atoms, 'radius', 1, 10, 0.5).name('Radius').listen()
@@ -392,23 +392,25 @@ var pulse = 0;
 var pulse_x = 0,
     pulse_y = 0;
 
-var exploration_timer = 0;
+var lastExploreTime = 0;
 function exploreParameters() {
-    if (exploration_timer <= 0) {
-        let c1 = settings.colors[Math.floor(mulberry32() * settings.numColors)];
-        if (mulberry32() >= 0.2) {  // 80% of the time, we change the strength
-          let c2 = settings.colors[Math.floor(mulberry32() * settings.numColors)];
-          let new_strength = mulberry32();
-          // for better results, we force opposite-signed values
-          if (settings.rules[c1][c2] > 0) new_strength = -new_strength;
-          settings.rules[c1][c2] = new_strength;
-        } else {  // ...otherwise, the radius
-          settings.radii[c1] = 1 + Math.floor(mulberry32() * maxRadius);
-        }
-        flattenRules();
-        exploration_timer = settings.explorePeriod;
+    const now = Date.now();
+    if (now - lastExploreTime < settings.explore * 1000) return;
+    console.log('exploring!');
+    let c1 = settings.colors[Math.floor(mulberry32() * settings.numColors)];
+    if (mulberry32() >= 0.2) {  // 80% of the time, we change the strength
+      let c2 = settings.colors[Math.floor(mulberry32() * settings.numColors)];
+      let new_strength = mulberry32();
+      // for better results, we force opposite-signed values
+      if (settings.rules[c1][c2] > 0) new_strength = -new_strength;
+      settings.rules[c1][c2] = new_strength;
+    } else {  // ...otherwise, the radius
+      settings.radii[c1] = 1 + Math.floor(mulberry32() * maxRadius);
     }
-    exploration_timer -= 1;
+    flattenRules();
+    universe.set_rules(settings.rulesArray);
+    exploration_timer = settings.explorePeriod;
+    lastExploreTime = now;
 }
 
 var total_v; // global velocity as a estimate of on-screen activity

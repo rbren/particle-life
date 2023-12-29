@@ -183,7 +183,6 @@ impl Universe {
             self.atoms[x] += self.atoms[vx];
             self.atoms[y] += self.atoms[vy];
             if self.settings.toroid {
-                web_sys::console::log_1(&"wrap".into());
                 if self.atoms[x] < 0.0 {
                     self.atoms[x] += self.settings.width as f32;
                 } else if self.atoms[x] > self.settings.width as f32 {
