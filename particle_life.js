@@ -1,14 +1,15 @@
 const FIELDS_PER_ATOM = 5;
-const MS_PER_FRAME = 50;
+const MS_PER_FRAME = 15;
 const maxRadius = 200;
 const maxClusters = 20;
 const minClusterSize = 50;
 const predefinedColors = ['green', 'red', 'orange', 'cyan', 'magenta', 'lavender', 'teal'];
 const settings = {
-    seed: 91651088029,
+    seed: 3762108977281,
     fps: 0,
+    numColors: 4,
     atoms: {
-        count: 100,  // Per Color
+        count: 500,  // Per Color
         radius: 1,
     },
     drawings: {  // Drawing options can be expensive on performance
@@ -38,7 +39,6 @@ const settings = {
     radii: {},
     radii2Array: [],
     colors: [],
-    numColors: 4,
     time_scale: 1.0,
     viscosity: 0.7,  // speed-dampening (can be >1 !)
     gravity: 0.0,  // pulling downward
@@ -541,6 +541,7 @@ window.startLife = function() {
         toroid: settings.toroid,
         rules: settings.rulesArray,
         wall_repel: settings.wallRepel,
+        viscosity: settings.viscosity,
     });
     lastT = Date.now();
     lastMsDuration = 0;
