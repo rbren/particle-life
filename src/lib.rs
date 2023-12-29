@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 pub struct Universe {
     width: u32,
     height: u32,
-    atoms: Vec<Vec<f32>>,
+    atoms: Vec<f32>,
 }
 
 #[wasm_bindgen]
@@ -25,11 +25,11 @@ impl Universe {
     }
 
     pub fn num_atoms(&self) -> usize {
-        self.atoms.len()
+        self.atoms.len() / 5 as usize
     }
 
     pub fn atoms(&self) -> *const f32 {
-        self.atoms[0].as_ptr()
+        self.atoms.as_ptr()
     }
 
     pub fn new() -> Universe {
@@ -38,14 +38,17 @@ impl Universe {
         let atoms_per_color = 100;
         let colors = 4;
         let num_atoms = colors as usize * atoms_per_color as usize;
-        let mut atoms: Vec<Vec<f32>> = Vec::with_capacity(num_atoms);
+        let mut atoms: Vec<f32> = Vec::with_capacity(num_atoms);
 
         for i in 0..colors {
             for _j in 0..atoms_per_color {
-                atoms.push(vec![
-                   js_sys::Math::random() as f32 * width as f32,
-                   js_sys::Math::random() as f32 * height as f32,
-                   0.0, 0.0, i as f32]);
+                let rand_x: f32 = (js_sys::Math::random() * width as f64) as f32;
+                let rand_y: f32 = (js_sys::Math::random() * height as f64) as f32;
+                atoms.push(rand_x);
+                atoms.push(rand_y);
+                atoms.push(0.1);
+                atoms.push(0.2);
+                atoms.push(i as f32);
             }
         }
 
@@ -57,9 +60,13 @@ impl Universe {
     }
 
     pub fn tick(&mut self) {
-        for atom in self.atoms.iter_mut() {
-            atom[0] += atom[2];
-            atom[2] += atom[3];
+        for i in 0..self.num_atoms() {
+            let x = 5 * i + 0;
+            let y = 5 * i + 1;
+            let vx = 5 * i + 2;
+            let vy = 5 * i + 3;
+            self.atoms[x] += self.atoms[vx];
+            self.atoms[y] += self.atoms[vy];
         }
     }
 }
