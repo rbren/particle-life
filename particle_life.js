@@ -539,7 +539,12 @@ var lastT;
 var univserse;
 window.startLife = function() {
     console.log('start life');
-    universe = window.Universe.new(canvas.width, canvas.height);
+    universe = window.Universe.new({
+        width: canvas.width,
+        height: canvas.height,
+        num_colors: settings.numColors,
+        atoms_per_color: settings.atoms.count,
+    });
     lastT = Date.now();
     update();
 }

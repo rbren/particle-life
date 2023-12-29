@@ -1,23 +1,32 @@
 // The wasm-pack uses wasm-bindgen to build and generate JavaScript binding file.
 // Import the wasm-bindgen crate.
 use wasm_bindgen::prelude::*;
+use serde::{Serialize, Deserialize};
 
 
 #[wasm_bindgen]
 pub struct Universe {
-    width: u32,
-    height: u32,
     atoms: Vec<f32>,
+    settings: Settings,
+}
+
+#[wasm_bindgen]
+#[derive(Serialize, Deserialize)]
+pub struct Settings {
+    height: u32,
+    width: u32,
+    num_colors: u8,
+    atoms_per_color: u32,
 }
 
 #[wasm_bindgen]
 impl Universe {
     pub fn width(&self) -> u32 {
-        self.width
+        self.settings.width
     }
 
     pub fn height(&self) -> u32 {
-        self.height
+        self.settings.height
     }
 
     pub fn num_atoms(&self) -> usize {
@@ -28,16 +37,15 @@ impl Universe {
         self.atoms.as_ptr()
     }
 
-    pub fn new(width: u32, height: u32) -> Universe {
-        let atoms_per_color = 100;
-        let colors = 4;
-        let num_atoms = colors as usize * atoms_per_color as usize;
+    pub fn new(settings_js: JsValue) -> Universe {
+        let settings: Settings = serde_wasm_bindgen::from_value(settings_js).unwrap();
+        let num_atoms = settings.num_colors as usize * settings.atoms_per_color as usize;
         let mut atoms: Vec<f32> = Vec::with_capacity(num_atoms);
 
-        for i in 0..colors {
-            for _j in 0..atoms_per_color {
-                let rand_x: f32 = (js_sys::Math::random() * width as f64) as f32;
-                let rand_y: f32 = (js_sys::Math::random() * height as f64) as f32;
+        for i in 0..settings.num_colors {
+            for _j in 0..settings.atoms_per_color {
+                let rand_x: f32 = (js_sys::Math::random() * settings.width as f64) as f32;
+                let rand_y: f32 = (js_sys::Math::random() * settings.height as f64) as f32;
                 atoms.push(rand_x);
                 atoms.push(rand_y);
                 atoms.push(0.0);
@@ -46,10 +54,10 @@ impl Universe {
             }
         }
 
+
         Universe {
-            width,
-            height,
             atoms,
+            settings,
         }
     }
 
