@@ -576,7 +576,6 @@ function update() {
     const numAtoms = universe.num_atoms();
     const atomsPtr = universe.atoms();
     atoms = new Float32Array(memory.buffer, atomsPtr, numAtoms * FIELDS_PER_ATOM);
-    console.log('got atoms', atoms.length);
 
     for (let i = 0; i < numAtoms; i++) {
         drawCircle(getX(i), getY(i), settings.colors[getColor(i)], settings.atoms.radius);

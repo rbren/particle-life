@@ -55,6 +55,33 @@ impl Universe {
 
     pub fn tick(&mut self) {
         for i in 0..self.num_atoms() {
+            let ax = 5 * i + 0;
+            let ay = 5 * i + 1;
+            let avx = 5 * i + 2;
+            let avy = 5 * i + 3;
+            let mut fx = 0.0;
+            let mut fy = 0.0;
+            for j in 0..self.num_atoms() {
+                let bx = 5 * j + 0;
+                let by = 5 * j + 1;
+                let dx = self.atoms[bx] - self.atoms[ax];
+                let dy = self.atoms[by] - self.atoms[ay];
+                //web_sys::console::log_2(&dx.into(), &dy.into());
+                if dx == 0.0 && dy == 0.0 {
+                    continue;
+                }
+                let d = dx * dx + dy * dy;
+                let g = 0.1; // todo: plumb
+                if d < 80.0  && d > 0.0 {
+                    let f = g / d.sqrt();
+                    fx += f * dx;
+                    fy += f * dy;
+                }
+            }
+            self.atoms[avx] += fx;
+            self.atoms[avy] += fy;
+        }
+        for i in 0..self.num_atoms() {
             let x = 5 * i + 0;
             let y = 5 * i + 1;
             let vx = 5 * i + 2;
