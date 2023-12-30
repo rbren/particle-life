@@ -78,7 +78,8 @@ const setupKeys = () => {
 
 // Build GUI
 const setupGUI = () => {
-    settings.gui = new lil.GUI()
+    if (settings.gui) settings.gui.destroy();
+    settings.gui = new lil.GUI();
     // Configs
     const configFolder = settings.gui.addFolder('Config')
     configFolder.add(settings, 'reset').name('Reset')
@@ -87,13 +88,10 @@ const setupGUI = () => {
     configFolder.add(settings, 'symmetricRules').name('Symmetric Rules')
     configFolder.add(settings, 'numColors', 1, 7, 1).name('Number of Colors')
         .listen().onFinishChange(v => {
-            setNumberOfColors();
-            randomizeRules();
             startLife();
         });
     configFolder.add(settings, 'seed').name('Seed')
         .listen().onFinishChange(v => {
-            randomizeRules();
             startLife();
         });
     configFolder.add(settings, 'fps').name('FPS - (Live)').listen().disable()
@@ -277,20 +275,24 @@ function exploreParameters() {
     lastExploreTime = now;
 }
 
+function reset() {
+    setNumberOfColors();
+    randomizeRules();
+    setupGUI()
+}
+
 // Generate Atoms
 let atoms = []
 
 
 setupKeys()
-setupGUI()
 
 var lastUpdateEnd;
 var lastMsDuration;
 var univserse;
 window.startLife = function() {
     if (window.animFrame) cancelAnimationFrame(window.animFrame);
-    setNumberOfColors();
-    randomizeRules();
+    reset();
     universe = window.Universe.new({
         width: canvas.width,
         height: canvas.height,
