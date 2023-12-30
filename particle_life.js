@@ -2,7 +2,7 @@ const DEBUG = false;
 const FIELDS_PER_ATOM = 5;
 const MS_PER_FRAME = 1;
 const maxRadius = 200;
-const predefinedColors = ['green', 'red', 'orange', 'cyan', 'magenta', 'lavender', 'teal'];
+const predefinedColors = ['lightgreen', 'red', 'orange', 'cyan', 'magenta', 'lavender', 'teal'];
 const settings = {
     seed: 3762108977281,
     fps: 0,
