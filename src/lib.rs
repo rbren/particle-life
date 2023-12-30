@@ -23,6 +23,7 @@ pub struct Settings {
     rules: Vec<f32>,
     radii: Vec<f32>,
     time_scale: f32,
+    debug: bool,
 }
 
 impl Settings {
@@ -52,7 +53,7 @@ impl Universe {
     pub fn new(settings_js: JsValue) -> Universe {
         let settings: Settings = serde_wasm_bindgen::from_value(settings_js).unwrap();
         let atoms = Vec::with_capacity(settings.num_atoms());
-         web_sys::console::log_1(&settings.toroid.into());
+        web_sys::console::log_1(&settings.toroid.into());
 
         let mut u = Universe {
             settings,
@@ -92,6 +93,10 @@ impl Universe {
     }
 
     pub fn random_atoms(&mut self) {
+        if self.settings.debug {
+            self.debug_atoms();
+            return
+        }
         self.atoms = Vec::with_capacity(self.num_atoms());
         for i in 0..self.settings.num_colors {
             for _j in 0..self.settings.atoms_per_color {
@@ -117,8 +122,8 @@ impl Universe {
         self.atoms.push(0.0);
         self.atoms.push(0.0);
 
-        self.atoms.push(100.0);
-        self.atoms.push(150.0);
+        self.atoms.push(140.0);
+        self.atoms.push(140.0);
         self.atoms.push(0.0);
         self.atoms.push(0.0);
         self.atoms.push(1.0);

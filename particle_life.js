@@ -1,3 +1,4 @@
+const DEBUG = false;
 const FIELDS_PER_ATOM = 5;
 const MS_PER_FRAME = 1;
 const maxRadius = 200;
@@ -270,8 +271,24 @@ function exploreParameters() {
 }
 
 function reset() {
+    if (DEBUG) {
+        settings.numColors = 2;
+        settings.atoms.count = 1;
+        settings.atoms.radius = 10;
+        settings.explore = 0;
+    }
     setNumberOfColors();
     randomizeRules();
+    if (DEBUG) {
+        const attr = -0.5;
+        settings.rules[settings.colors[0]][settings.colors[0]] = attr;
+        settings.rules[settings.colors[0]][settings.colors[1]] = attr;
+        settings.rules[settings.colors[1]][settings.colors[0]] = attr;
+        settings.rules[settings.colors[1]][settings.colors[1]] = attr;
+        settings.radii[settings.colors[0]] = 110;
+        settings.radii[settings.colors[1]] = 110;
+        updateRules();
+    }
     setupGUI()
 }
 
@@ -308,6 +325,7 @@ window.startLife = function() {
         wall_repel: settings.wallRepel,
         viscosity: settings.viscosity,
         time_scale: settings.timeScale,
+        debug: DEBUG,
     });
     lastUpdateEnd = Date.now();
     lastMsDuration = 0;
