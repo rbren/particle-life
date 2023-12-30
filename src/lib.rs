@@ -128,6 +128,8 @@ impl Universe {
             let acol = 5 * i + 4;
             let mut fx = 0.0;
             let mut fy = 0.0;
+            let r = 80.0;
+            let r2 = r * r;
             for j in 0..self.num_atoms() {
                 if i == j {
                     continue;
@@ -148,10 +150,13 @@ impl Universe {
                 if dx == 0.0 && dy == 0.0 {
                     continue;
                 }
+                if dx.abs() > r || dy.abs() > r {
+                    continue;
+                }
                 let d = dx * dx + dy * dy;
                 let rule_idx = self.atoms[acol] as u8 * self.settings.num_colors + self.atoms[bcol] as u8;
                 let g = self.settings.rules[rule_idx as usize];
-                if d < 80.0 * 80.0  && d > 0.0 {
+                if d < r2 && d > 0.0 {
                     let f = g / d.sqrt();
                     fx += f * dx;
                     fy += f * dy;
