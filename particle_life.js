@@ -7,7 +7,7 @@ const predefinedColors = ['green', 'red', 'orange', 'cyan', 'magenta', 'lavender
 const settings = {
     seed: 3762108977281,
     fps: 0,
-    numColors: 4,
+    numColors: 6,
     atoms: {
         count: 500,  // Per Color
         radius: 1,
@@ -32,18 +32,18 @@ const settings = {
             mediaRecorder.state == 'recording' ? mediaRecorder.stop() : mediaRecorder.start();
         },
     },
-    explore: 0,
+    explore: 4,
     rules: {},
     rulesArray: [],
     radii: {},
     radii2Array: [],
     colors: [],
-    timeScale: 1.0,
+    timeScale: 0.2,
     viscosity: 0.7,  // speed-dampening (can be >1 !)
     gravity: 0.0,  // pulling downward
     pulseDuration: 10,
     wallRepel: 40,
-    toroid: false,
+    toroid: true,
     reset: () => {
         startLife();
     },
