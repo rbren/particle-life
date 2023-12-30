@@ -1,8 +1,6 @@
 const FIELDS_PER_ATOM = 5;
 const MS_PER_FRAME = 1;
 const maxRadius = 200;
-const maxClusters = 20;
-const minClusterSize = 50;
 const predefinedColors = ['green', 'red', 'orange', 'cyan', 'magenta', 'lavender', 'teal'];
 const settings = {
     seed: 3762108977281,
@@ -13,9 +11,7 @@ const settings = {
         radius: 1,
     },
     drawings: {  // Drawing options can be expensive on performance
-        lines: false,   // draw lines between atoms that arr effecting each other
         circle: false,  // draw atoms as circles
-        clusters: false,
         background_color: '#000000', // Background color
     },
     export: {
@@ -41,7 +37,6 @@ const settings = {
     timeScale: 0.2,
     viscosity: 0.7,  // speed-dampening (can be >1 !)
     gravity: 0.0,  // pulling downward
-    pulseDuration: 10,
     wallRepel: 40,
     toroid: true,
     reset: () => {
@@ -61,16 +56,6 @@ const settings = {
     gui: null,
 }
 
-const setupClicks = () => {
-    canvas.addEventListener('click',
-        (e) => {
-            pulse = settings.pulseDuration;
-            if (e.shiftKey) pulse = -pulse;
-            pulse_x = e.clientX;
-            pulse_y = e.clientY;
-        }
-    )
-}
 const setupKeys = () => {
     canvas.addEventListener('keydown',
         function (e) {
@@ -78,9 +63,6 @@ const setupKeys = () => {
             switch (e.key) {
                 case 'r':
                   settings.randomRules()
-                break;
-                case 't':
-                  settings.drawings.clusters = !settings.drawings.clusters
                 break;
                 case 'o':
                   settings.reset()
@@ -93,17 +75,6 @@ const setupKeys = () => {
             }
         })
 }
-const updateGUIDisplay = () => {
-    console.log('gui', settings.gui)
-    settings.gui.destroy()
-    setupGUI()
-}
-Object.defineProperty(String.prototype, 'capitalise', {
-    value: function() {
-        return this.charAt(0).toUpperCase() + this.slice(1);
-    },
-    enumerable: false
-})
 
 // Build GUI
 const setupGUI = () => {
@@ -140,7 +111,6 @@ const setupGUI = () => {
         });
 
     configFolder.add(settings, 'gravity', 0., 1., 0.05).name('Gravity').listen()
-    configFolder.add(settings, 'pulseDuration', 1, 100, 1).name('Click Pulse Duration').listen()
 
     configFolder.add(settings, 'wallRepel', 0, 100, 1).name('Wall Repel').listen()
         .listen().onFinishChange(v => {
@@ -155,9 +125,6 @@ const setupGUI = () => {
     // Drawings
     const drawingsFolder = settings.gui.addFolder('Drawings')
     drawingsFolder.add(settings.atoms, 'radius', 1, 10, 0.5).name('Radius').listen()
-    drawingsFolder.add(settings.drawings, 'circle').name('Circle Shape').listen()
-    drawingsFolder.add(settings.drawings, 'clusters').name('Track Clusters').listen()
-    drawingsFolder.add(settings.drawings, 'lines').name('Draw Lines').listen()
     drawingsFolder.addColor(settings.drawings, 'background_color').name('Background Color').listen()
     // Export
     const exportFolder = settings.gui.addFolder('Export')
@@ -166,10 +133,10 @@ const setupGUI = () => {
     // Colors
     for (const atomColor of settings.colors) {
         const colorFolder =
-            settings.gui.addFolder(`Rules: <font color=\'${atomColor}\'>${atomColor.capitalise()}</font>`)
+            settings.gui.addFolder(`Rules: <font color=\'${atomColor}\'>${atomColor}</font>`)
         for (const ruleColor of settings.colors) {
             colorFolder.add(settings.rules[atomColor], ruleColor, -1, 1, 0.001)
-                 .name(`<-> <font color=\'${ruleColor}\'>${ruleColor.capitalise()}</font>`)
+                 .name(`<-> <font color=\'${ruleColor}\'>${ruleColor}</font>`)
                  .listen().onFinishChange(v => { flattenRules(); startLife(); }
             )
         }
@@ -263,28 +230,6 @@ function updateCanvasDimensions() {
     canvas.height = window.innerHeight * 0.9;
 }
 
-// Initiate Random locations for Atoms ( used when atoms created )
-function randomX() {
-    return mulberry32() * canvas.width;
-};
-
-function randomY() {
-    return mulberry32() * canvas.height;
-};
-
-/* Create an Atom - Use matrices for x4/5 performance improvement
-atom[0] = x
-atom[1] = y
-atom[2] = ax
-atom[3] = ay
-atom[4] = color (index)
-*/
-const create = (number, color) => {
-    for (let i = 0; i < number; i++) {
-        atoms.push([randomX(), randomY(), 0, 0, color])
-    }
-};
-
 function setNumberOfColors() {
     settings.colors = [];
     for (let i = 0; i < settings.numColors; ++i) {
@@ -298,11 +243,6 @@ loadSeedFromUrl()
 // Canvas
 const canvas = document.getElementById('canvas');
 const m = canvas.getContext("2d");
-// Draw a square
-const drawSquare = (x, y, color, radius) => {
-    m.fillStyle = color;
-    m.fillRect(x - radius, y - radius, 2 * radius, 2 * radius);
-}
 
 // Draw a circle
 function drawCircle(x, y, color, radius, fill = true) {
@@ -313,86 +253,9 @@ function drawCircle(x, y, color, radius, fill = true) {
     fill ? m.fill() : m.stroke()
 };
 
-// Draw a line between two atoms
-function drawLineBetweenAtoms(ax, ay, bx, by, color) {
-    m.beginPath();
-    m.moveTo(ax, ay);
-    m.lineTo(bx, by);
-    m.closePath();
-    m.strokeStyle = color;
-    m.stroke();
-};
-
-// [position-x, position-y, radius, color]
-//    /* tmp accumulators: */
-//  {count, accum-x, accum-y, accum-d^2, accum-color}]
-let clusters = [];
-function newCluster() {
-    return [randomX(), randomY(), maxRadius, 'white'];
-}
-function addNewClusters(num_clusters) {
-    if (clusters.length < num_clusters / 2) {
-        while (clusters.length < num_clusters) clusters.push(newCluster());
-    }
-}
-function findNearestCluster(x, y) {
-    let best = -1;
-    let best_d2 = 1.e38;
-    for (let i = 0; i < clusters.length; ++i) {
-        const c = clusters[i];
-        const dx = c[0] - x;
-        const dy = c[1] - y;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < best_d2) {
-            best = i;
-            best_d2 = d2;
-        }
-    }
-    return [best, best_d2];
-}
-function moveClusters(accums) {
-    let max_d = 0.;   // record max cluster displacement
-    for (let i = 0; i < clusters.length; ++i) {
-        let c = clusters[i];
-        const a = accums[i];
-        if (a[0] > minClusterSize) {
-            const norm = 1. / a[0];
-            const new_x = a[1] * norm;
-            const new_y = a[2] * norm;
-            max_d = Math.max(max_d, Math.abs(c[0] - new_x), Math.abs(c[1 ] - new_y));
-            c[0] = new_x;
-            c[1] = new_y;
-        }
-    }
-    return max_d;
-}
-function finalizeClusters(accums) {
-    for (let i = 0; i < clusters.length; ++i) {
-        let c = clusters[i];
-        const a = accums[i];
-        if (a[0] > minClusterSize) {
-            const norm = 1. / a[0];
-            const new_r = 1.10 * Math.sqrt(a[3] * norm);  // with 10% extra room
-            c[2] = 0.95 * c[2] + 0.05 * new_r;  // exponential smoothing
-            // 'average' color
-            c[3] = settings.colors[Math.floor(a[4] * norm + .5)];
-        } else {
-            c[2] = 0.;   // disable the weak cluster
-        }
-    }
-    // note: if half of the particles are not within the average
-    // radius of the cluster, we should probably split it in two
-    // along the main axis!
-}
-
 // Canvas Dimensions
 updateCanvasDimensions()
 
-
-// Params for click-based pulse event
-var pulse = 0;
-var pulse_x = 0,
-    pulse_y = 0;
 
 var lastExploreTime = 0;
 function exploreParameters() {
@@ -414,136 +277,20 @@ function exploreParameters() {
     lastExploreTime = now;
 }
 
-var total_v; // global velocity as a estimate of on-screen activity
-
-const getDistance = (a, b) => {
-    let dx = a[0] - b[0];
-    let dy = a[1] - b[1];
-    if (settings.toroid) {
-        const altDx = dx > 0 ? dx - canvas.width : dx + canvas.width;
-        const altDy = dy > 0 ? dy - canvas.height : dy + canvas.height;
-        if (Math.abs(altDx) < Math.abs(dx)) dx = altDx;
-        if (Math.abs(altDy) < Math.abs(dy)) dy = altDy;
-    }
-    return [dx, dy];
-}
-
-// Apply Rules ( How atoms interact with each other )
-const applyRules = () => {
-    total_v = 0.;
-    // update velocity first
-    for (const a of atoms) {
-        let fx = 0;
-        let fy = 0;
-        const idx = a[4] * settings.numColors;
-        const r2 = settings.radii2Array[a[4]]
-        for (const b of atoms) {
-            if (a === b) continue
-            const g = settings.rulesArray[idx + b[4]];
-            const [dx, dy] = getDistance(a, b);
-            if (dx == 0 && dy == 0) continue;
-            const d = dx * dx + dy * dy
-            if (d < r2) {
-                const F = g / Math.sqrt(d);
-                fx += F * dx;
-                fy += F * dy;
-
-                // Draw lines between atoms that are effecting each other.
-                if (settings.drawings.lines) {
-                    drawLineBetweenAtoms(a[0], a[1], b[0], b[1], settings.colors[b[4]]);
-                }
-            }
-        }
-        if (pulse != 0) {
-            const dx = a[0] - pulse_x;
-            const dy = a[1] - pulse_y;
-            const d = dx * dx + dy * dy;
-            if (d > 0) {
-                const F = 100. * pulse / (d * settings.timeScale);
-                fx += F * dx;
-                fy += F * dy;
-            }
-        }
-        if (!settings.toroid && settings.wallRepel > 0) {
-          const d = settings.wallRepel
-          const strength = 0.1
-          if (a[0] <                d) fx += (d -                a[0]) * strength
-          if (a[0] > canvas.width - d) fx += (canvas.width - d - a[0]) * strength
-          if (a[1] <                 d) fy += (d                 - a[1]) * strength
-          if (a[1] > canvas.height - d) fy += (canvas.height - d - a[1]) * strength
-        }
-        fy += settings.gravity;
-        const vmix = (1. - settings.viscosity);
-        a[2] = a[2] * vmix + fx * settings.timeScale;
-        a[3] = a[3] * vmix + fy * settings.timeScale;
-        // record typical activity, so that we can scale the
-        // timeScale later accordingly
-        total_v += Math.abs(a[2]);
-        total_v += Math.abs(a[3]);
-    }
-    // update positions now
-    for (const a of atoms) {
-        a[0] += a[2]
-        a[1] += a[3]
-
-        // When Atoms touch or bypass canvas borders
-        if (a[0] < 0) {
-            if (settings.toroid) {
-                a[0] += canvas.width;
-            } else {
-                a[0] = -a[0];
-                a[2] *= -1;
-            }
-        }
-        if (a[0] >= canvas.width) {
-            if (settings.toroid) {
-                a[0] -= canvas.width;
-            } else {
-                a[0] = 2 * canvas.width - a[0];
-                a[2] *= -1;
-            }
-        }
-        if (a[1] < 0) {
-            if (settings.toroid) {
-                a[1] += canvas.height;
-            } else {
-                a[1] = -a[1];
-                a[3] *= -1;
-            }
-        }
-        if (a[1] >= canvas.height) {
-            if (settings.toroid) {
-                a[1] -= canvas.height;
-            } else {
-                a[1] = 2 * canvas.height - a[1];
-                a[3] *= -1;
-            }
-        }
-
-    }
-    total_v /= atoms.length;
-};
-
-
-setNumberOfColors();
-randomizeRules();
-
 // Generate Atoms
 let atoms = []
 
 
-setupClicks()
 setupKeys()
 setupGUI()
 
-console.log('settings', settings)
-
-var lastT;
+var lastUpdateEnd;
 var lastMsDuration;
 var univserse;
 window.startLife = function() {
-    console.log('start life');
     if (window.animFrame) cancelAnimationFrame(window.animFrame);
+    setNumberOfColors();
+    randomizeRules();
     universe = window.Universe.new({
         width: canvas.width,
         height: canvas.height,
@@ -555,7 +302,7 @@ window.startLife = function() {
         viscosity: settings.viscosity,
         time_scale: settings.timeScale,
     });
-    lastT = Date.now();
+    lastUpdateEnd = Date.now();
     lastMsDuration = 0;
     update();
 }
@@ -566,14 +313,6 @@ function getX(index) {
 
 function getY(index) {
     return atoms[index * FIELDS_PER_ATOM + 1];
-}
-
-function getVx(index) {
-    return atoms[index * FIELDS_PER_ATOM + 2];
-}
-
-function getVy(index) {
-    return atoms[index * FIELDS_PER_ATOM + 3];
 }
 
 function getColor(index) {
@@ -598,35 +337,19 @@ function update() {
         drawCircle(getX(i), getY(i), settings.colors[getColor(i)], settings.atoms.radius);
     }
 
-    updateParams();
+    if (settings.explore) exploreParameters();
 
-    // const inRange = (a) => 0 <= a[0] && a[0] < canvas.width && 0 <= a[1] && a[1] < canvas.height
-    // console.log('inRange', atoms.filter(inRange).length)
     const updateEnd = Date.now();
+    lastMsDuration = updateEnd - lastUpdateEnd;
+    const new_fps = 1000. / lastMsDuration;
+    settings.fps = settings.fps * 0.8 + new_fps * 0.2;
+
     const timeLeft = MS_PER_FRAME - (updateEnd - updateStart);
     setTimeout(() => {
         window.animFrame = requestAnimationFrame(update);
     }, Math.max(0, timeLeft));
+    lastUpdateEnd = updateEnd;
 };
-
-// post-frame stats and updates
-function updateParams() {
-    // record FPS
-    var curT = Date.now();
-    if (curT > lastT) {
-        lastMsDuration = curT - lastT;
-        const new_fps = 1000. / lastMsDuration;
-        settings.fps = settings.fps * 0.8 + new_fps * 0.2;
-        lastT = curT;
-    } else {
-        console.log("time went backwards!");
-    }
-
-    if (pulse != 0) pulse -= (pulse > 0) ? 1 : -1;
-    if (settings.explore) exploreParameters();
-}
-
-
 
 // Download DataURL
 function dataURL_downloader(dataURL, name = `particle_life_${settings.seed}`) {
