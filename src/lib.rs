@@ -21,6 +21,7 @@ pub struct Settings {
     wall_repel: u32,
     viscosity: f32,
     rules: Vec<f32>,
+    radii: Vec<f32>,
     time_scale: f32,
 }
 
@@ -68,6 +69,10 @@ impl Universe {
 
     pub fn set_rules(&mut self, rules: Vec<f32>) {
         self.settings.rules = rules;
+    }
+
+    pub fn set_radii(&mut self, radii: Vec<f32>) {
+        self.settings.radii = radii;
     }
 
     pub fn set_viscosity(&mut self, viscosity: f32) {
@@ -146,7 +151,7 @@ impl Universe {
             let acol = 5 * i + 4;
             let mut fx = 0.0;
             let mut fy = 0.0;
-            let r = 80.0;
+            let r = self.settings.radii[self.atoms[acol] as usize];
             let r2 = r * r;
             for j in 0..self.num_atoms() {
                 if i == j {

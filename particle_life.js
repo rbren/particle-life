@@ -32,7 +32,7 @@ const settings = {
     rules: {},
     rulesArray: [],
     radii: {},
-    radii2Array: [],
+    radiiArray: [],
     colors: [],
     timeScale: 0.2,
     viscosity: 0.7,  // speed-dampening (can be >1 !)
@@ -45,7 +45,6 @@ const settings = {
     randomRules: () => {
         settings.seed = local_seed   // last used seed is the new starting seed
         randomizeRules();
-        universe.set_rules(settings.rulesArray);
     },
     randomSetup: () => {
         settings.seed = local_seed   // last used seed is the new starting seed
@@ -59,7 +58,6 @@ const settings = {
 const setupKeys = () => {
     canvas.addEventListener('keydown',
         function (e) {
-            console.log(e.key)
             switch (e.key) {
                 case 'r':
                   settings.randomRules()
@@ -135,12 +133,14 @@ const setupGUI = () => {
         for (const ruleColor of settings.colors) {
             colorFolder.add(settings.rules[atomColor], ruleColor, -1, 1, 0.001)
                  .name(`<-> <font color=\'${ruleColor}\'>${ruleColor}</font>`)
-                 .listen().onFinishChange(v => { flattenRules(); startLife(); }
-            )
+                 .listen().onFinishChange(v => {
+                    updateRules();
+                 })
         }
         colorFolder.add(settings.radii, atomColor, 1, maxRadius, 5).name('Radius')
-            .listen().onFinishChange(v => { flattenRules(); startLife(); }
-        )
+            .listen().onFinishChange(v => {
+                updateRules();
+            })
     }
 
 
@@ -186,7 +186,6 @@ function randomizeRules() {
     window.location.hash = "#" + settings.seed;
     document.title = "Life #" + settings.seed;
     local_seed = settings.seed;
-    console.log("Seed=" + local_seed);
     for (const i of settings.colors) {
         settings.rules[i] = {};
         for (const j of settings.colors) {
@@ -194,9 +193,8 @@ function randomizeRules() {
         }
         settings.radii[i] = 80;
     }
-    console.log(JSON.stringify(settings.rules));
-    flattenRules()
     if (settings.symmetricRules) symmetrizeRules();
+    updateRules();
 }
 
 function symmetrizeRules() {
@@ -208,18 +206,16 @@ function symmetrizeRules() {
             }
         }
     }
-    console.log(JSON.stringify(settings.rules));
-    flattenRules()
 }
 
 function flattenRules() {
     settings.rulesArray = []
-    settings.radii2Array = []
+    settings.radiiArray = []
     for (const c1 of settings.colors) {
         for (const c2 of settings.colors) {
             settings.rulesArray.push(settings.rules[c1][c2])
         }
-        settings.radii2Array.push(settings.radii[c1] * settings.radii[c1])
+        settings.radiiArray.push(settings.radii[c1])
     }
 }
 
@@ -270,8 +266,6 @@ function exploreParameters() {
     } else {  // ...otherwise, the radius
       settings.radii[c1] = 1 + Math.floor(mulberry32() * maxRadius);
     }
-    flattenRules();
-    universe.set_rules(settings.rulesArray);
     lastExploreTime = now;
 }
 
@@ -283,6 +277,16 @@ function reset() {
 
 // Generate Atoms
 let atoms = []
+let universe = null;
+
+function updateRules() {
+    flattenRules();
+    if (universe) {
+        universe.set_rules(settings.rulesArray);
+        universe.set_radii(settings.radiiArray);
+        console.log('set rules and rads', settings.radiiArray);
+    }
+}
 
 
 setupKeys()
@@ -300,6 +304,7 @@ window.startLife = function() {
         atoms_per_color: settings.atoms.count,
         toroid: settings.toroid,
         rules: settings.rulesArray,
+        radii: settings.radiiArray,
         wall_repel: settings.wallRepel,
         viscosity: settings.viscosity,
         time_scale: settings.timeScale,
