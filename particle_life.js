@@ -6,7 +6,7 @@ const predefinedColors = ['lightgreen', 'red', 'orange', 'cyan', 'magenta', 'lav
 const settings = {
     seed: 3762108977281,
     fps: 0,
-    numColors: 6,
+    numColors: 4,
     atoms: {
         count: 500,  // Per Color
         radius: 1,
@@ -29,17 +29,17 @@ const settings = {
             mediaRecorder.state == 'recording' ? mediaRecorder.stop() : mediaRecorder.start();
         },
     },
-    explore: 4,
+    explore: 0,
     rules: {},
     rulesArray: [],
     radii: {},
     radiiArray: [],
     colors: [],
-    timeScale: 0.2,
+    timeScale: 1.0,
     viscosity: 0.7,  // speed-dampening (can be >1 !)
     gravity: 0.0,  // pulling downward
     wallRepel: 40,
-    realForces: true,
+    realForces: false,
     toroid: true,
     reset: () => {
         startLife();
@@ -278,7 +278,7 @@ function exploreParameters() {
 function reset() {
     if (DEBUG) {
         settings.numColors = 2;
-        settings.atoms.count = 1;
+        settings.atoms.count = 10;
         settings.atoms.radius = 10;
         settings.explore = 0;
     }
@@ -331,7 +331,7 @@ window.startLife = function() {
         viscosity: settings.viscosity,
         time_scale: settings.timeScale,
         real_forces: settings.realForces,
-        debug: DEBUG,
+        debug: false,
     });
     lastUpdateEnd = Date.now();
     lastMsDuration = 0;
