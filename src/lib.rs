@@ -234,8 +234,19 @@ impl Universe {
                     self.atoms[y] -= self.settings.height as f32;
                 }
             } else {
-                self.atoms[x] = self.atoms[x].max(0.0).min(self.settings.width as f32);
-                self.atoms[y] = self.atoms[y].max(0.0).min(self.settings.height as f32);
+                if self.atoms[x] < 0.0 {
+                    self.atoms[x] = self.atoms[x] * -1.0;
+                    self.atoms[vx] = -self.atoms[vx];
+                } else if self.atoms[x] > self.settings.width as f32 {
+                    self.atoms[x] = self.settings.width as f32 - (self.atoms[x] - self.settings.width as f32);
+                    self.atoms[vx] = -self.atoms[vx];
+                } else if self.atoms[y] < 0.0 {
+                    self.atoms[y] = self.atoms[y] * -1.0;
+                    self.atoms[vy] = -self.atoms[vy];
+                } else if self.atoms[y] > self.settings.height as f32 {
+                    self.atoms[y] = self.settings.height as f32 - (self.atoms[y] - self.settings.height as f32);
+                    self.atoms[vy] = -self.atoms[vy];
+                }
             }
         }
     }
