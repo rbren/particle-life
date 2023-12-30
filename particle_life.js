@@ -33,7 +33,6 @@ const settings = {
         },
     },
     explore: 0,
-    explorePeriod: 100,
     rules: {},
     rulesArray: [],
     radii: {},
@@ -412,7 +411,6 @@ function exploreParameters() {
     }
     flattenRules();
     universe.set_rules(settings.rulesArray);
-    exploration_timer = settings.explorePeriod;
     lastExploreTime = now;
 }
 
