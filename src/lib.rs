@@ -119,6 +119,24 @@ impl Universe {
         self.atoms.push(1.0);
     }
 
+    fn get_distance(&self, i: usize, j: usize) -> (f32, f32) {
+        let ax = 5 * i + 0;
+        let ay = 5 * i + 1;
+        let bx = 5 * j + 0;
+        let by = 5 * j + 1;
+        let mut dx = self.atoms[ax] - self.atoms[bx];
+        let mut dy = self.atoms[ay] - self.atoms[by];
+        if self.settings.toroid {
+            let w = self.settings.width as f32;
+            let h = self.settings.height as f32;
+            let alt_dx = if dx > 0.0 { dx - w } else { dx + w };
+            let alt_dy = if dy > 0.0 { dy - h } else { dy + h };
+            if alt_dx.abs() < dx.abs() { dx = alt_dx; }
+            if alt_dy.abs() < dy.abs() { dy = alt_dy; }
+        }
+        return (dx, dy);
+    }
+
     pub fn tick(&mut self) {
         for i in 0..self.num_atoms() {
             let ax = 5 * i + 0;
@@ -134,19 +152,8 @@ impl Universe {
                 if i == j {
                     continue;
                 }
-                let bx = 5 * j + 0;
-                let by = 5 * j + 1;
                 let bcol = 5 * j + 4;
-                let mut dx = self.atoms[ax] - self.atoms[bx];
-                let mut dy = self.atoms[ay] - self.atoms[by];
-                if self.settings.toroid {
-                    let w = self.settings.width as f32;
-                    let h = self.settings.height as f32;
-                    let alt_dx = if dx > 0.0 { dx - w } else { dx + w };
-                    let alt_dy = if dy > 0.0 { dy - h } else { dy + h };
-                    if alt_dx.abs() < dx.abs() { dx = alt_dx; }
-                    if alt_dy.abs() < dy.abs() { dy = alt_dy; }
-                }
+                let (dx, dy) = self.get_distance(i, j);
                 if dx == 0.0 && dy == 0.0 {
                     continue;
                 }
