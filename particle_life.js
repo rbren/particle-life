@@ -39,6 +39,7 @@ const settings = {
     viscosity: 0.7,  // speed-dampening (can be >1 !)
     gravity: 0.0,  // pulling downward
     wallRepel: 40,
+    realForces: true,
     toroid: true,
     reset: () => {
         startLife();
@@ -116,6 +117,10 @@ const setupGUI = () => {
 
     configFolder.add(settings, 'toroid').name('Toroid').listen().onFinishChange(v => {
         universe.set_toroid(v);
+    });
+
+    configFolder.add(settings, 'realForces').name('Real Forces').listen().onFinishChange(v => {
+        universe.set_real_forces(v);
     });
 
     configFolder.add(settings, 'explore', 0, 60, 1).name('Explore (s)').listen()
@@ -325,6 +330,7 @@ window.startLife = function() {
         wall_repel: settings.wallRepel,
         viscosity: settings.viscosity,
         time_scale: settings.timeScale,
+        real_forces: settings.realForces,
         debug: DEBUG,
     });
     lastUpdateEnd = Date.now();

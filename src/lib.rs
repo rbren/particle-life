@@ -23,6 +23,7 @@ pub struct Settings {
     rules: Vec<f32>,
     radii: Vec<f32>,
     time_scale: f32,
+    real_forces: bool,
     debug: bool,
 }
 
@@ -86,6 +87,10 @@ impl Universe {
 
     pub fn set_toroid(&mut self, toroid: bool) {
         self.settings.toroid = toroid;
+    }
+
+    pub fn set_real_forces(&mut self, real_forces: bool) {
+        self.settings.real_forces = real_forces;
     }
 
     pub fn set_time_scale(&mut self, time_scale: f32) {
@@ -174,9 +179,18 @@ impl Universe {
                 let rule_idx = self.atoms[acol] as u8 * self.settings.num_colors + self.atoms[bcol] as u8;
                 let g = self.settings.rules[rule_idx as usize];
                 if d < r2 && d > 0.0 {
-                    let f = g / d.sqrt();
-                    fx += f * dx;
-                    fy += f * dy;
+                    if self.settings.real_forces {
+                        let f = g * (1.0 - d.sqrt() / r);
+                        if g > 0.0 || d > 1.0 {
+                            let theta = -(-dy).atan2(dx);
+                            fx += f * theta.cos();
+                            fy += f * theta.sin();
+                        }
+                    } else {
+                        let f = g / d.sqrt();
+                        fx += f * dx;
+                        fy += f * dy;
+                    }
                 }
             }
             if !self.settings.toroid && self.settings.wall_repel > 0 {
